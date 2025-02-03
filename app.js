@@ -1,8 +1,20 @@
 const express = require("express");
+const morgan = require("morgan");
+const fs = require("fs");
+var path = require("path");
 require("./config/dbConfig.js");
 const Product = require("./models/productModel.js");
 
 const app = express();
+
+app.use((req, res, next) => {
+    console.log("--> Request received", req.url);
+    next();
+});
+
+var accessLogStream = fs.createWriteStream(path.join(__dirname, "http.log"), { flags: "a" });
+
+app.use(morgan("combined", { stream: accessLogStream }));
 
 app.use(express.json());
 
@@ -29,7 +41,7 @@ app.get("/api/v1/products", async (req, res) => {
         res.status(200).json({
             status: "success",
             data: {
-                products,
+                products: products,
                 total: totalProducts,
             },
         });

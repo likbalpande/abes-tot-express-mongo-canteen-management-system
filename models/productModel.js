@@ -13,11 +13,17 @@ const productSchema = new mongoose.Schema(
             required: true,
             min: 1,
         },
-        availability: {
-            type: String,
-            enum: ["in-stock", "out-of-stock"],
-            default: "in-stock",
+        // availability: {
+        //     type: String,
+        //     enum: ["in-stock", "out-of-stock"],
+        //     default: "in-stock",
+        // },
+        quantity: {
+            type: Number,
+            default: 1,
+            min: 0,
         },
+        thumbnail: String,
     },
     {
         timestamps: true,
