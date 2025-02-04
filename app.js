@@ -2,8 +2,11 @@ const express = require("express");
 const morgan = require("morgan");
 require("./config/dbConfig.js");
 const Product = require("./models/productModel.js");
+const cors = require("cors");
 
 const app = express();
+
+app.use(cors());
 
 app.use((req, res, next) => {
     console.log("--> Request received", req.url);
@@ -20,7 +23,7 @@ app.use(express.json());
 app.get("/api/v1/products", async (req, res) => {
     // http://localhost:1401/api/v1/products?size=2&page=2
     try {
-        const { q = "", size = 4, page = 1, fields = "-__v -createdAt -updateAt" } = req.query;
+        const { q = "", size = 4, page = 1, fields = " -__v -createdAt -updateAt" } = req.query;
         const productsQuery = Product.find();
         if (q.length > 0) {
             const reg = new RegExp(q, "i");

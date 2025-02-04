@@ -1,0 +1,6 @@
+(https://www.npmjs.com/package/cors)
+--> npm i cors
+
+use cors as middleware
+--> const cors = require('cors')
+--> app.use(cors())
