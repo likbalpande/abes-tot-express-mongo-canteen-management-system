@@ -1,7 +1,5 @@
 const express = require("express");
 const morgan = require("morgan");
-const fs = require("fs");
-var path = require("path");
 require("./config/dbConfig.js");
 const Product = require("./models/productModel.js");
 
@@ -12,16 +10,17 @@ app.use((req, res, next) => {
     next();
 });
 
-var accessLogStream = fs.createWriteStream(path.join(__dirname, "http.log"), { flags: "a" });
+// var accessLogStream = fs.createWriteStream(path.join(__dirname, "http.log"), { flags: "a" });
+// app.use(morgan("combined", { stream: accessLogStream }));
 
-app.use(morgan("combined", { stream: accessLogStream }));
+app.use(morgan("dev"));
 
 app.use(express.json());
 
 app.get("/api/v1/products", async (req, res) => {
     // http://localhost:1401/api/v1/products?size=2&page=2
     try {
-        const { q = "", size = 4, page = 1 } = req.query;
+        const { q = "", size = 4, page = 1, fields = "-__v -createdAt -updateAt" } = req.query;
         const productsQuery = Product.find();
         if (q.length > 0) {
             const reg = new RegExp(q, "i");
@@ -33,6 +32,7 @@ app.get("/api/v1/products", async (req, res) => {
         productsQuery.sort("price -title");
         productsQuery.skip((page - 1) * size);
         productsQuery.limit(size);
+        productsQuery.select(fields); // projection
 
         const products = await productsQuery;
 
