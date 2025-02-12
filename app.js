@@ -8,6 +8,7 @@ const cors = require("cors"); // npm i cors
 const bcrypt = require("bcrypt"); // npm i bcrypt
 const { sendEmail } = require("./utils/emailHelper.js");
 const jwt = require("jsonwebtoken");
+const cookieParser = require("cookie-parser");
 
 const app = express();
 
@@ -59,32 +60,6 @@ app.get("/api/v1/products", async (req, res) => {
             status: "fail",
             message: "Internal Server Error",
         });
-    }
-});
-
-app.post("/api/v1/products", async (req, res) => {
-    try {
-        const newProductInfo = req.body;
-        const newProduct = await Product.create(newProductInfo);
-        res.status(201).json({
-            status: "success",
-            data: {
-                product: newProduct,
-            },
-        });
-    } catch (err) {
-        console.log(err._message);
-        if (err.name == "ValidationError") {
-            res.status(400).json({
-                status: "fail",
-                message: "Data validation failed",
-            });
-        } else {
-            res.status(500).json({
-                status: "fail",
-                message: "Internal Server Error",
-            });
-        }
     }
 });
 
@@ -245,6 +220,50 @@ app.post("/api/v1/otps", async (req, res) => {
             res.status(400).json({
                 status: "fail",
                 message: "Data validation failed: " + err.message,
+            });
+        } else {
+            res.status(500).json({
+                status: "fail",
+                message: "Internal Server Error",
+            });
+        }
+    }
+});
+
+app.use(cookieParser());
+
+app.use((req, res, next) => {
+    const { authorization } = req.cookies;
+    jwt.verify(authorization, "this_is_a_very_long_secret_key_abcd_123", (error, decoded) => {
+        if (error) {
+            res.status(401);
+            res.json({
+                status: "fail",
+                message: "Unauthorized",
+            });
+            return;
+        }
+        req.userInfo = decoded; // its not important
+        next();
+    });
+});
+
+app.post("/api/v1/products", async (req, res) => {
+    try {
+        const newProductInfo = req.body;
+        const newProduct = await Product.create(newProductInfo);
+        res.status(201).json({
+            status: "success",
+            data: {
+                product: newProduct,
+            },
+        });
+    } catch (err) {
+        console.log(err._message);
+        if (err.name == "ValidationError") {
+            res.status(400).json({
+                status: "fail",
+                message: "Data validation failed",
             });
         } else {
             res.status(500).json({
