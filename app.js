@@ -7,6 +7,7 @@ const OTP = require("./models/otpModel.js");
 const cors = require("cors"); // npm i cors
 const bcrypt = require("bcrypt"); // npm i bcrypt
 const { sendEmail } = require("./utils/emailHelper.js");
+const jwt = require("jsonwebtoken");
 
 const app = express();
 
@@ -141,6 +142,8 @@ app.post("/api/v1/users", async (req, res) => {
                 status: "success",
                 message: "User created",
             });
+
+            await OTP.findByIdAndDelete(otpDoc._id);
         } else {
             res.status(401);
             res.json({
@@ -163,6 +166,57 @@ app.post("/api/v1/users", async (req, res) => {
                 message: "Internal Server Error",
             });
         }
+    }
+});
+
+app.post("/api/v1/login", async (req, res) => {
+    try {
+        const { email, password: plainPassword } = req.body;
+        const currentUser = await User.findOne({ email: email });
+        if (currentUser) {
+            const { _id, name, password: hashedPassword } = currentUser;
+            const isPasswordCorrect = await bcrypt.compare(plainPassword, hashedPassword);
+            if (isPasswordCorrect) {
+                const token = jwt.sign(
+                    {
+                        email,
+                        name,
+                        _id,
+                    },
+                    "this_is_a_very_long_secret_key_abcd_123",
+                    {
+                        expiresIn: "1d", // https://github.com/vercel/ms?tab=readme-ov-file#examples
+                    }
+                );
+                console.log(token);
+                res.cookie("authorization", token);
+                res.status(200);
+                res.json({
+                    status: "success",
+                });
+            } else {
+                res.status(401);
+                res.json({
+                    status: "fail",
+                    message: "Email or password is invalid",
+                });
+            }
+        } else {
+            res.status(400);
+            res.json({
+                status: "fail",
+                message: "User is not registered!",
+            });
+            return;
+        }
+    } catch (err) {
+        console.log(err.name);
+        console.log(err.code);
+        console.log(err.message);
+        res.status(500).json({
+            status: "fail",
+            message: "Internal Server Error",
+        });
     }
 });
 
