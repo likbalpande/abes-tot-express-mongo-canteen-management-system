@@ -1,3 +1,4 @@
+require("dotenv").config();
 const express = require("express");
 const morgan = require("morgan");
 require("./config/dbConfig.js");
@@ -12,7 +13,12 @@ const cookieParser = require("cookie-parser");
 
 const app = express();
 
-app.use(cors());
+app.use(
+    cors({
+        credentials: true,
+        origin: "http://localhost:5173",
+    })
+);
 
 app.use((req, res, next) => {
     console.log("--> Request received", req.url);
@@ -163,8 +169,11 @@ app.post("/api/v1/login", async (req, res) => {
                         expiresIn: "1d", // https://github.com/vercel/ms?tab=readme-ov-file#examples
                     }
                 );
-                console.log(token);
-                res.cookie("authorization", token);
+                res.cookie("authorization", token, {
+                    httpOnly: true,
+                    sameSite: "none",
+                    secure: true,
+                });
                 res.status(200);
                 res.json({
                     status: "success",
@@ -233,6 +242,7 @@ app.post("/api/v1/otps", async (req, res) => {
 app.use(cookieParser());
 
 app.use((req, res, next) => {
+    console.log("-->", req.cookies);
     const { authorization } = req.cookies;
     jwt.verify(authorization, "this_is_a_very_long_secret_key_abcd_123", (error, decoded) => {
         if (error) {
@@ -245,6 +255,14 @@ app.use((req, res, next) => {
         }
         req.userInfo = decoded; // its not important
         next();
+    });
+});
+
+app.get("/api/v1/isLoggedIn", (req, res) => {
+    res.status(200);
+    res.json({
+        status: "success",
+        data: req.userInfo,
     });
 });
 
