@@ -13,6 +13,7 @@ const cookieParser = require("cookie-parser");
 
 const app = express();
 
+console.log(process.env.FRONTEND_URL);
 app.use(
     cors({
         credentials: true,
